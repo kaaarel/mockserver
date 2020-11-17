@@ -1,6 +1,11 @@
 package org.mockserver.socket.tls;
 
-import org.mockserver.configuration.ConfigurationProperties;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.mockserver.file.FileReader;
 import org.mockserver.log.model.LogEntry;
 import org.mockserver.logging.MockServerLogger;
@@ -8,11 +13,12 @@ import org.slf4j.event.Level;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.security.KeyFactory;
-import java.security.cert.CertificateEncodingException;
+import java.io.StringReader;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
@@ -36,13 +42,13 @@ public class PEMToFile {
         return toPEM(privateKey, BEGIN_PRIVATE_KEY, END_PRIVATE_KEY);
     }
 
-    public static String certToPEM(final X509Certificate... x509Certificates) throws CertificateEncodingException {
-        StringBuilder pem = new StringBuilder();
-        for (X509Certificate x509Certificate : x509Certificates) {
-            pem.append(toPEM(x509Certificate.getEncoded(), BEGIN_CERTIFICATE, END_CERTIFICATE)).append(NEW_LINE);
-        }
-        return pem.toString();
-    }
+//    public static String certToPEM(final X509Certificate... x509Certificates) throws CertificateEncodingException {
+//        StringBuilder pem = new StringBuilder();
+//        for (X509Certificate x509Certificate : x509Certificates) {
+//            pem.append(toPEM(x509Certificate.getEncoded(), BEGIN_CERTIFICATE, END_CERTIFICATE)).append(NEW_LINE);
+//        }
+//        return pem.toString();
+//    }
 
     public static String certToPEM(final byte[]... x509Certificates) {
         StringBuilder pem = new StringBuilder();
@@ -85,7 +91,7 @@ public class PEMToFile {
         return new PKCS8EncodedKeySpec(privateKeyBytesFromPEM(pem));
     }
 
-    public static RSAPrivateKey privateKeyFromPEMFile(String filename) {
+    public static PrivateKey privateKeyFromPEMFile(String filename) {
         try {
             return privateKeyFromPEM(FileReader.readFileFromClassPathOrPath(filename));
         } catch (Exception e) {
@@ -93,9 +99,14 @@ public class PEMToFile {
         }
     }
 
-    public static RSAPrivateKey privateKeyFromPEM(String pem) {
+
+    public static PrivateKey privateKeyFromPEM(String pem) {
         try {
-            return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(keySpecFromPEM(pem));
+            Security.addProvider(new BouncyCastleProvider());
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(privateKeyBytesFromPEM(pem));
+            ASN1InputStream bIn = new ASN1InputStream(new ByteArrayInputStream(spec.getEncoded()));
+            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(bIn.readObject());
+            return new JcaPEMKeyConverter().setProvider("BC").getPrivateKey(pki);
         } catch (Exception e) {
             throw new RuntimeException("Exception reading private key from PEM file", e);
         }
@@ -133,13 +144,13 @@ public class PEMToFile {
         }
     }
 
-    public static List<X509Certificate> x509ChainFromPEM(String pem) {
-        try {
-            return x509ChainFromPEM(new ByteArrayInputStream(pem.getBytes()));
-        } catch (Exception e) {
-            throw new RuntimeException("Exception reading X509 from PEM " + NEW_LINE + pem, e);
-        }
-    }
+//    public static List<X509Certificate> x509ChainFromPEM(String pem) {
+//        try {
+//            return x509ChainFromPEM(new ByteArrayInputStream(pem.getBytes()));
+//        } catch (Exception e) {
+//            throw new RuntimeException("Exception reading X509 from PEM " + NEW_LINE + pem, e);
+//        }
+//    }
 
     @SuppressWarnings("unchecked")
     private static List<X509Certificate> x509ChainFromPEM(InputStream inputStream) {

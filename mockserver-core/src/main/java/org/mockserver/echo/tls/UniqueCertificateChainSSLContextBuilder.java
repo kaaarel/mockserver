@@ -11,9 +11,11 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 
 import static org.mockserver.configuration.ConfigurationProperties.*;
 import static org.mockserver.socket.tls.KeyAndCertificateFactory.KEY_GENERATION_ALGORITHM;

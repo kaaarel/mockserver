@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 
@@ -47,7 +48,8 @@ import static org.slf4j.event.Level.*;
 public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
     private static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
-    private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
+    private static final String RSA_SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
+    private static final String EC_SIGNATURE_ALGORITHM = "SHA256WITHECDSA";
 
     private final MockServerLogger mockServerLogger;
 
@@ -57,7 +59,7 @@ public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
     private PrivateKey privateKey;
     private X509Certificate x509Certificate;
-    private RSAPrivateKey certificateAuthorityPrivateKey;
+    private PrivateKey certificateAuthorityPrivateKey;
     private X509Certificate certificateAuthorityX509Certificate;
 
     public BCKeyAndCertificateFactory(MockServerLogger mockServerLogger) {
@@ -199,7 +201,7 @@ public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
         return cert;
     }
 
-    private RSAPrivateKey certificateAuthorityPrivateKey() {
+    private PrivateKey certificateAuthorityPrivateKey() {
         if (certificateAuthorityPrivateKey == null) {
             if (dynamicCertificateAuthorityUpdate()) {
                 buildAndSaveCertificateAuthorityPrivateKeyAndX509Certificate();
@@ -327,7 +329,10 @@ public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
     }
 
     private X509Certificate signCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey) throws OperatorCreationException, CertificateException {
-        ContentSigner signer = new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).setProvider(PROVIDER_NAME).build(privateKey);
+        String algorithm = privateKey instanceof RSAPrivateKey ? RSA_SIGNATURE_ALGORITHM
+            : privateKey instanceof ECPrivateKey ? EC_SIGNATURE_ALGORITHM
+            : null;
+        ContentSigner signer = new JcaContentSignerBuilder(algorithm).setProvider(PROVIDER_NAME).build(privateKey);
         return new JcaX509CertificateConverter().setProvider(PROVIDER_NAME).getCertificate(certificateBuilder.build(signer));
     }
 

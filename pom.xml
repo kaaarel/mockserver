@@ -68,6 +68,7 @@
         <skipAssembly>false</skipAssembly>
         <release.arguments />
         <javadoc.additional.parameters />
+        <skipTests>true</skipTests>
     </properties>
 
     <modules>
@@ -257,13 +258,13 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
                 <version>${boucycastle.verion}</version>
-                <scope>provided</scope>
+<!--                <scope>provided</scope>-->
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${boucycastle.verion}</version>
-                <scope>provided</scope>
+<!--                <scope>provided</scope>-->
             </dependency>
 
             <!-- templating -->
@@ -564,6 +565,13 @@
                             <releaseProfiles>release</releaseProfiles>
                             <goals>deploy</goals>
                             <arguments>${release.arguments}</arguments>
+                            <checkModificationExcludes>
+                                <checkModificationExclude>pom.xml</checkModificationExclude>
+                                <checkModificationExclude>docker/local/local_docker_build.sh</checkModificationExclude>
+                                <checkModificationExclude>docker_build/maven/Dockerfile</checkModificationExclude>
+                                <checkModificationExclude>mockserver-core/src/main/java/org/mockserver/socket/tls/PEMToFile.java</checkModificationExclude>
+                                <checkModificationExclude>mockserver-core/src/main/java/org/mockserver/socket/tls/bouncycastle/BCKeyAndCertificateFactory.java</checkModificationExclude>
+                            </checkModificationExcludes>
                         </configuration>
                     </plugin>
                 </plugins>
